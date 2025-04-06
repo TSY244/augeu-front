@@ -12,21 +12,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': {
+      '/api/v1': { // 精确匹配前端的 /api/v1 开头路径
         target: 'http://127.0.0.1:8080',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-        secure: false
-      },
-      '/get': {
-        target: 'http://127.0.0.1:8080/api/v1',
-        changeOrigin: true,
-        secure: false
-      },
-      '/login': {
-        target: 'http://127.0.0.1:8080/api/v1',
-        changeOrigin: true,
-        secure: false
+        changeOrigin: true, // 必须开启，否则后端收到的 Origin 是 localhost:5173
+        // 无 rewrite，保留原始路径
       }
     }
   }

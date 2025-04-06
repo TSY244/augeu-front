@@ -19,17 +19,17 @@ export interface PatchInfo {
   InstalledOn: string
 }
 
-export interface SystemInfo {
-  os_arch: string
-  os_name: string
-  os_version: string
-  patchs: PatchInfo[]
+export interface ClientInfo {
+  uuid: string;
+  ip: string[]; // ✅ 添加缺失的 ip 字段
+  SystemInfo: SystemInfo;
 }
 
-export interface ClientInfo {
-  uuid: string
-  ip: string[]
-  SystemInfo: SystemInfo
+export interface SystemInfo {
+  os_arch: string;
+  os_name: string;
+  os_version: string;
+  patchs: PatchInfo[]; 
 }
 
 export interface GetClientsResponse {

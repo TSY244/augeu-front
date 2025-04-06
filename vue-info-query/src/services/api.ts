@@ -1,8 +1,8 @@
 import axios, { AxiosResponse } from 'axios'
-import { LoginResponse, EventResponse, GetClientsResponse } from '../types/api'
+import { LoginResponse, EventResponse, GetClientsResponse, ClientInfo } from '../types/api'
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8080/api/v1', // 直接使用完整后端地址
+  baseURL: '/api/v1', //
   headers: {
     'Content-Type': 'application/json'
   }
@@ -10,45 +10,37 @@ const api = axios.create({
 
 // Request interceptor
 api.interceptors.request.use(config => {
-  // 从cookie获取token
+  // 从 cookie 或 debugMode 取 token（假设 token 存储在 cookie 的 Authorization 字段）
   const token = document.cookie
     .split('; ')
-    .find(row => row.startsWith('Authorization='))
-    ?.split('=')[1]
-  
-  // 调试模式特殊处理
-  const debugMode = localStorage.getItem('debugMode') === 'true'
-  if (debugMode) {
-    const debugToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('Authorization='))
-      ?.split('=')[1]
-    if (debugToken) {
-      config.headers.Authorization = debugToken
-    }
-    return config
+    .find(row => row.startsWith('token='))
+    ?.split('=')[1];
+
+  let authToken = '';
+
+  authToken = token || '';
+  // console.log('authToken', authToken);
+
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
   }
 
-  // 正常模式使用登录返回的JWT
-  if (token) {
-    config.headers.Authorization = token
-  }
-  return config
-})
+  return config;
+});
 
 // Response interceptor
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     // 登录成功时保存JWT到cookie
     if (response.config.url?.includes('/login') && response.data?.jwt) {
-      document.cookie = `Authorization=${response.data.jwt}; path=/; max-age=86400` // 1天有效期
+      document.cookie = `token=${response.data.jwt}; path=/; max-age=86400` // 1天有效期
     }
     return response.data
   },
   error => {
     if (error.response?.status === 401) {
       // 清除认证信息
-      document.cookie = 'Authorization=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
       localStorage.removeItem('debugMode')
       window.location.href = '/login'
     }
@@ -70,13 +62,18 @@ export default {
         headers: {
           'Accept': 'application/json',
           'Cache-Control': 'no-cache',
-          'Authorization': localStorage.getItem('token')
         }
       })
       console.log('API Response:', response) // 调试响应
-      if (!response.data.clients) {
-        throw new Error('Invalid response format: missing clients field')
+      if (!Array.isArray(response.data.clients)) {
+        throw new Error('Invalid response format: clients is not an array');
       }
+      response.data.clients.forEach((client: ClientInfo) => {
+        if (!client.uuid || !client.ip || !Array.isArray(client.ip)) {
+          throw new Error('Invalid client data: missing required fields');
+        }
+      })
+  
       return response.data
     } catch (error) {
       console.error('API请求失败:', error)
