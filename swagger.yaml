@@ -1,0 +1,830 @@
+swagger: "2.0"
+info:
+  title: Augeu
+  description: Augeu api
+  version: 0.0.1
+schemes:
+  - https
+  - http
+
+basePath: /api/v1
+consumes:
+  - application/json
+produces:
+  - application/json
+
+
+paths:
+  /version:
+    get:
+      security: [ ]
+      responses:
+        200:
+          description: "返回 Augeu Api 版本号"
+          schema:
+            $ref: "#/definitions/Version"
+
+  /getClientId:
+    post:
+      security: [ ]
+      parameters:
+        - in: body
+          name: data
+          schema:
+            $ref: "#/definitions/GetClientIdRequest"
+      responses:
+        200:
+          description: "返回 Augeu Api 版本号"
+          schema:
+            $ref: "#/definitions/GetClientIdResponse"
+        401:
+          description: "没有权限"
+          schema:
+            $ref: "#/definitions/UnauthorizedError"
+        500:
+          description: "内部错误"
+          schema:
+            $ref: "#/definitions/ActionFailure"
+
+  /login:
+    post:
+      security: [ ]
+      parameters:
+        - in: body
+          name: credentials
+          required: true
+          schema:
+            $ref: "#/definitions/LoginRequest"
+      responses:
+        200:
+          description: "登录成功，返回 JWT 令牌"
+          schema:
+            $ref: "#/definitions/LoginResponse"
+        401:
+          description: "用户名或密码错误"
+          schema:
+            $ref: "#/definitions/UnauthorizedError"
+        500:
+          description: "内部错误"
+          schema:
+            $ref: "#/definitions/ActionFailure"
+  /register:
+    post:
+      security: [ ]
+      parameters:
+        - in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/RegisterRequest"
+      responses:
+        200:
+          description: "注册成功"
+          schema:
+            $ref: "#/definitions/RegisterResponse"
+        400:
+          description: "输入参数错误"
+          schema:
+            $ref: "#/definitions/BadRequestError"
+        500:
+          description: "内部错误"
+          schema:
+            $ref: "#/definitions/ActionFailure"
+
+  /upload/loginEvent:
+    post:
+      security: [ ]
+      parameters:
+        - in: body
+          name: eventLog
+          required: true
+          schema:
+            $ref: "#/definitions/UploadLoginEventRequest"
+      responses:
+        200:
+          description: "事件日志上传成功"
+          schema:
+            $ref: "#/definitions/UploadLoginEventResponse"
+        400:
+          description: "输入参数错误"
+          schema:
+            $ref: "#/definitions/BadRequestError"
+        500:
+          description: "内部错误"
+          schema:
+            $ref: "#/definitions/ActionFailure"
+        403:
+          description: "没有权限"
+          schema:
+            $ref: "#/definitions/UnauthorizedError"
+
+  /get/loginEvent:
+    post:
+      summary: 查询登录事件
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/LoginEventQuery'
+      responses:
+        200:
+          description: 成功返回事件数组
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/LoginEvent'
+
+  /updata/rdpEvent:
+    post:
+      summary: 上传RDP事件
+      parameters:
+        - in: body
+          name: events
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RDPEventUpload'
+      responses:
+        200:
+          description: 上传成功
+
+  /get/rdpEvent:
+    post:
+      summary: 查询RDP事件
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/CommonQuery'
+      responses:
+        200:
+          description: 成功返回事件数组
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/EventRDPLogon'
+
+  /updata/serviceEvent:
+    post:
+      summary: 上传服务事件
+      parameters:
+        - in: body
+          name: events
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ServiceEventUpload'
+      responses:
+        200:
+          description: 上传成功
+
+  /get/serviceEvent:
+    post:
+      summary: 查询服务事件
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/CommonQuery'
+      responses:
+        200:
+          description: 成功返回服务事件数组
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ServiceInfo'
+
+  /updata/processEvent:
+    post:
+      summary: 上传创建进程事件
+      parameters:
+        - in: body
+          name: events
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/EventCreateProcess'
+      responses:
+        200:
+          description: 上传成功
+
+  /get/processEvent:
+    post:
+      summary: 查询创建进程事件
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/CommonQuery'
+      responses:
+        200:
+          description: 成功返回事件数组
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/EventCreateProcess'
+
+  /updata/powershellEvent:
+    post:
+      summary: 上传PowerShell事件
+      parameters:
+        - in: body
+          name: events
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/EventPowerShell'
+      responses:
+        200:
+          description: 上传成功
+
+  /get/powershellEvent:
+    post:
+      summary: 查询PowerShell事件
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/CommonQuery'
+      responses:
+        200:
+          description: 成功返回事件数组
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/EventPowerShell'
+
+  /updata/systemEvent:
+    post:
+      summary: 上传系统日志事件
+      parameters:
+        - in: body
+          name: events
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SystemEvent'
+      responses:
+        200:
+          description: 上传成功
+
+  /get/systemEvent:
+    post:
+      summary: 查询系统日志事件
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/CommonQuery'
+      responses:
+        200:
+          description: 成功返回事件数组
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SystemEvent'
+
+  /updata/applicationEvent:
+    post:
+      summary: 上传应用日志事件
+      parameters:
+        - in: body
+          name: events
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ApplicationEvent'
+      responses:
+        200:
+          description: 上传成功
+
+  /get/applicationEvent:
+    post:
+      summary: 查询应用日志事件
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/CommonQuery'
+      responses:
+        200:
+          description: 成功返回事件数组
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ApplicationEvent'
+
+  /updata/securityEvent:
+    post:
+      summary: 上传安全日志事件
+      parameters:
+        - in: body
+          name: events
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SecurityEvent'
+      responses:
+        200:
+          description: 上传成功
+
+  /get/securityEvent:
+    post:
+      summary: 查询安全日志事件
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/CommonQuery'
+      responses:
+        200:
+          description: 成功返回事件数组
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SecurityEvent'
+
+
+
+
+definitions:
+  Version:
+    type: object
+    properties:
+      version:
+        type: string
+        description: "版本号"
+        default: 0.0.1
+
+  PageMeta:
+    type: object
+    properties:
+      total:
+        type: integer
+      page:
+        type: integer
+        default: 1
+      size:
+        type: integer
+        default: 10
+
+  UnauthorizedError:
+    type: object
+    required:
+      - message
+      - code
+    properties:
+      message:
+        type: string
+        description: "没有权限"
+      code:
+        type: integer
+        description: "403"
+
+  ActionFailure:
+    type: object
+    required:
+      - success
+      - from
+      - reason
+    properties:
+      success:
+        type: boolean
+        default: false
+      from:
+        type: string
+        default: "unknown"
+      reason:
+        type: string
+        default: "unexpected stack overflow"
+
+  GetClientIdResponse:
+    type: object
+    required:
+      - success
+      - clientId
+    properties:
+      success:
+        type: boolean
+        default: true
+      clientId:
+        type: string
+        default: "unknown"
+      jwt:
+        type: string
+
+  GetClientIdRequest:
+    type: object
+    required:
+      - uuid
+      - secret
+      - ip
+      - system_info
+    properties:
+      uuid:
+        type: string
+        description: "唯一标识符"
+      secret:
+        type: string
+        description: "密钥"
+      ip:
+        type: array
+        items:
+          type: string
+        description: "IP 地址列表"
+      system_info:
+        $ref: "#/definitions/SystemInfo"
+        description: "系统信息"
+
+  SystemInfo:
+    type: object
+    required:
+      - os_name
+      - os_version
+      - os_arch
+      - patchs
+    properties:
+      os_name:
+        type: string
+        description: "操作系统名称"
+      os_version:
+        type: string
+        description: "操作系统版本"
+      os_arch:
+        type: string
+        description: "操作系统架构"
+      patchs:
+        type: array
+        items:
+          $ref: "#/definitions/Patch"
+        description: "补丁列表"
+
+  Patch:
+    type: object
+    required:
+      - Description
+      - HotFixID
+      - InstalledBy
+      - InstalledOn
+    properties:
+      Description:
+        type: string
+        description: "补丁描述"
+      HotFixID:
+        type: string
+        description: "热修复 ID"
+      InstalledBy:
+        type: string
+        description: "安装者"
+      InstalledOn:
+        type: string
+        description: "安装时间"
+
+  LoginRequest:
+    type: object
+    required:
+      - secrete
+      - name
+      - password
+    properties:
+      secrete:
+        type: string
+        description: "server 提供的secrete"
+      name:
+        type: string
+        description: "用户名"
+      password:
+        type: string
+        description: "密码"
+
+  LoginResponse:
+    type: object
+    required:
+      - success
+      - jwt
+    properties:
+      success:
+        type: boolean
+        default: true
+        description: "是否成功"
+      jwt:
+        type: string
+        description: "JWT 令牌"
+        default: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        # 登陆失败搞个 假的 jwt 搞心态
+
+  RegisterRequest:
+    type: object
+    required:
+      - userName
+      - passWord
+      - secrete
+    properties:
+      userName:
+        type: string
+        description: "用户名"
+      passWord:
+        type: string
+        description: "密码"
+      secrete:
+        type: string
+        description: "server 提供的token"
+
+
+  RegisterResponse:
+    type: object
+    required:
+      - success
+      - message
+    properties:
+      success:
+        type: boolean
+        default: true
+      message:
+        type: string
+        default: "注册成功"
+
+  BadRequestError:
+    type: object
+    required:
+      - message
+      - code
+    properties:
+      message:
+        type: string
+        description: "输入参数错误"
+      code:
+        type: integer
+        description: "400"
+
+  LoginEvent:
+    type: object
+    required:
+      - EventID
+      - EventTime
+      - MachineUUID
+      - LoginType
+      - Username
+      - SubjectDomain
+      - SourceIP
+      - SubjectUser
+      - ProcessName
+    properties:
+      EventID:
+        type: integer
+        description: "事件ID，4624表示成功登录"
+      EventTime:
+        type: string
+        format: date-time
+        description: "事件时间，格式：2006-01-02 15:04:05（注意原数据日期时间连写问题）"
+      MachineUUID:
+        type: string
+        description: "设备唯一标识符（UUID格式）"
+      SubjectDomain:
+        type: string
+        description: "登录用户所属域（-表示无）"
+      LoginType:
+        type: string
+        description: "登录类型（Unknown表示无法识别的类型）"
+      Username:
+        type: string
+        description: "登录用户名（SYSTEM表示系统账户）"
+      SourceIP:
+        type: string
+        description: "源IP地址（-表示无）"
+      SubjectUser:
+        type: string
+        description: "登录会话用户（-表示无）"
+      ProcessName:
+        type: string
+        description: "触发登录的进程名（-表示无）"
+
+  UploadLoginEventRequest:
+    type: array
+    items:
+      $ref: "#/definitions/LoginEvent"
+
+  UploadLoginEventResponse:
+    type: object
+    required:
+      - success
+      - message
+    properties:
+      success:
+        type: boolean
+        default: true
+      message:
+        type: string
+        default: "事件日志上传成功"
+
+  QueryEvent:
+    type: object
+    properties:
+      event_type:
+        type: string
+        enum:
+          - login
+          - rdp
+          - service
+          - user
+          - createProcessLog
+          - powershell
+          - lsass
+          - system
+          - application
+          - security
+      uuid:
+        type: string
+        description: "UUID"
+        example: "1234567890"
+      clientId:
+        type: string
+        description: "Client ID"
+      ip:
+        type: string
+        description: "IP"
+        example: "127.0.0.1"
+      eventId:
+        type: integer
+        description: "Event ID"
+
+  LoginEventQuery:
+    type: object
+    properties:
+      clientId:
+        type: string
+      Uuid:
+        type: string
+      ip:
+        type: string
+
+  CommonQuery:
+    type: object
+    properties:
+      clientId:
+        type: string
+      Uuid:
+        type: string
+      ip:
+        type: string
+
+  RDPEventUpload:
+    type: object
+    properties:
+      event_id:
+        type: string
+      description:
+        type: string
+
+  ServiceEventUpload:
+    type: object
+    properties:
+      event_id:
+        type: string
+      description:
+        type: string
+
+#  LoginEvent:
+#    type: object
+#    properties:
+#      EventId:
+#        type: integer
+#      EventTime:
+#        type: string
+#        format: date-time
+#      LoginType:
+#        type: string
+#      SourceIp:
+#        type: string
+#      Username:
+#        type: string
+#      SubjectUsername:
+#        type: string
+#      SubjectDomain:
+#        type: string
+#      ProcessName:
+#        type: string
+#      UUID:
+#        type: string
+
+  EventRDPLogon:
+    type: object
+    properties:
+      CreateAt:
+        type: string
+        format: date-time
+      ID:
+        type: integer
+      UUID:
+        type: string
+      EventID:
+        type: string
+      LoginName:
+        type: string
+      Address:
+        type: string
+      Domain:
+        type: string
+      Description:
+        type: string
+
+  ServiceInfo:
+    type: object
+    properties:
+      ID:
+        type: integer
+      ServiceName:
+        type: string
+      ImagePath:
+        type: string
+      StartType:
+        type: string
+      Account:
+        type: string
+      Description:
+        type: string
+      UUID:
+        type: string
+      EventID:
+        type: string
+
+  EventCreateProcess:
+    type: object
+    properties:
+      ID:
+        type: integer
+      UUID:
+        type: string
+      EventID:
+        type: string
+      Create_User:
+        type: string
+      Create_User_Domain:
+        type: string
+      NewProcessName:
+        type: string
+      ParentProcessName:
+        type: string
+      CommandLine:
+        type: string
+      Description:
+        type: string
+
+  EventPowerShell:
+    type: object
+    properties:
+      ID:
+        type: integer
+      UUID:
+        type: string
+      EventID:
+        type: string
+      Command:
+        type: string
+      Description:
+        type: string
+
+  SystemEvent:
+    type: object
+    properties:
+      ID:
+        type: integer
+      UUID:
+        type: string
+      EventID:
+        type: string
+      LevelDisplayName:
+        type: string
+      Description:
+        type: string
+
+  ApplicationEvent:
+    type: object
+    properties:
+      ID:
+        type: integer
+      UUID:
+        type: string
+      CreateTime:
+        type: string
+        format: date-time
+      EventID:
+        type: string
+      LevelDisplayName:
+        type: string
+      Description:
+        type: string
+
+  SecurityEvent:
+    type: object
+    properties:
+      ID:
+        type: integer
+      UUID:
+        type: string
+      EventID:
+        type: string
+      LevelDisplayName:
+        type: string
+      Description:
+        type: string
