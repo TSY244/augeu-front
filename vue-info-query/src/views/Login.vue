@@ -23,8 +23,7 @@ watch(debugMode, (val) => {
 const onSubmit = async () => {
   try {
     loading.value = true
-    const { jwt } = await api.login(form.value)
-    localStorage.setItem('token', jwt)
+    await api.login(form.value)
     router.push('/')
   } catch (error) {
     ElMessage.error('Login failed. Please check your credentials.')

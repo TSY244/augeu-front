@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "@tsconfig/node18": "^18.2.4",
+    "@types/node": "^22.14.0"
+  }
+}
