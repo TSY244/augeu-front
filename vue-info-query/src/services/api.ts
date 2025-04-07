@@ -19,7 +19,7 @@ api.interceptors.request.use(config => {
   let authToken = '';
 
   authToken = token || '';
-  // console.log('authToken', authToken);
+  console.log('authToken', authToken);
 
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
@@ -35,7 +35,7 @@ api.interceptors.response.use(
     if (response.config.url?.includes('/login') && response.data?.jwt) {
       document.cookie = `token=${response.data.jwt}; path=/; max-age=86400` // 1天有效期
     }
-    return response.data
+    return response
   },
   error => {
     if (error.response?.status === 401) {
@@ -58,21 +58,29 @@ export default {
   async getClientInfo(): Promise<GetClientsResponse> {
     try {
       console.log('Current cookies:', document.cookie) // 调试cookie
-      const response = await api.get('/get/clients', {
+      const response = await api.get<GetClientsResponse> ('/get/clients', {
         headers: {
           'Accept': 'application/json',
           'Cache-Control': 'no-cache',
         }
       })
+
+      console.debug('[API Debug] 完整响应对象:', {
+        status: response.status,
+        headers: response.headers,
+        data: response.data
+      });
+      
       console.log('API Response:', response) // 调试响应
-      if (!Array.isArray(response.data.clients)) {
+      console.log('Response Data:', response.data)
+      if (!Array.isArray(response.data.clients)) { // ✅ 校验数据字段
         throw new Error('Invalid response format: clients is not an array');
       }
-      response.data.clients.forEach((client: ClientInfo) => {
-        if (!client.uuid || !client.ip || !Array.isArray(client.ip)) {
-          throw new Error('Invalid client data: missing required fields');
-        }
-      })
+      // response.data.clients.forEach((client: ClientInfo) => {
+      //   if (!client.uuid || !client.ip || !Array.isArray(client.ip)) {
+      //     throw new Error('Invalid client data: missing required fields');
+      //   }
+      // })
   
       return response.data
     } catch (error) {

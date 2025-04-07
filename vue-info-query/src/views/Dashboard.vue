@@ -1,9 +1,116 @@
+<template>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <h1>Information Dashboard</h1>
+      <div class="debug-toggle">
+        <el-switch
+          v-model="debugMode"
+          active-text="Debug Mode"
+          inactive-text="Normal Mode"
+          @change="toggleDebugMode"
+        />
+      </div>
+    </div>
+    <el-tabs v-model="activeTab">
+      <el-tab-pane
+        v-for="tab in tabs"
+        :key="tab.name"
+        :label="tab.label"
+        :name="tab.name"
+      >
+        <div class="search-container">
+          <el-input
+            v-model="searchQuery"
+            placeholder="Search (clientId, uuid, ip, etc)..."
+            clearable
+            @change="fetchData"
+          >
+            <template #append>
+              <el-button @click="fetchData">Search</el-button>
+              <el-button @click="showAdvanced = !showAdvanced">
+                {{ showAdvanced ? 'Hide' : 'Advanced' }}
+              </el-button>
+            </template>
+          </el-input>
+
+          <el-collapse-transition>
+            <div v-if="showAdvanced" class="advanced-search">
+              <div class="filter-grid">
+                <div v-for="filter in filters" :key="filter.key" class="filter-row">
+                  <el-checkbox v-model="filter.active" />
+                  <span class="filter-label">{{ filter.label }}</span>
+                  <el-input
+                    v-model="filter.value"
+                    :disabled="!filter.active"
+                    clearable
+                  />
+                </div>
+                <el-button
+                  type="primary"
+                  @click="applyAdvancedSearch"
+                  class="apply-btn"
+                >
+                  Apply Filters
+                </el-button>
+              </div>
+            </div>
+          </el-collapse-transition>
+        </div>
+        <el-table
+          v-loading="loading"
+          :data="tableData"
+          style="width: 100%"
+          height="calc(100vh - 250px)"
+        >
+          <el-table-column type="expand">
+            <template #default="props">
+              <div class="patch-details">
+                <h4>Patch Details ({{ props.row.SystemInfo.patchs.length }})</h4>
+                <el-table :data="props.row.SystemInfo.patchs" size="small">
+                  <el-table-column prop="HotFixID" label="HotFix ID" width="150" />
+                  <el-table-column prop="Description" label="Description" />
+                  <el-table-column prop="InstalledBy" label="Installed By" width="180" />
+                  <el-table-column prop="InstalledOn" label="Installed On" width="120" />
+                </el-table>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-for="column in getColumns()"
+            :key="column.prop"
+            :prop="column.prop"
+            :label="column.label"
+            :width="column.width"
+          >
+            <template #default="scope" v-if="column.label === 'Patches'">
+              <el-button @click="showPatchDetails(scope.row)">展开</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
+    </el-tabs>
+    <el-dialog :visible.sync="dialogVisible" title="Patch Details">
+      <template #content>
+        <el-table :data="selectedPatches" size="small">
+          <el-table-column prop="HotFixID" label="HotFix ID" width="150" />
+          <el-table-column prop="Description" label="Description" />
+          <el-table-column prop="InstalledBy" label="Installed By" width="180" />
+          <el-table-column prop="InstalledOn" label="Installed On" width="120" />
+        </el-table>
+      </template>
+      <template #footer>
+        <el-button @click="dialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, watch, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElTabs, ElTabPane, ElTable, ElTableColumn, ElMessage } from 'element-plus'
+import { ElTabs, ElTabPane, ElTable, ElTableColumn, ElMessage, ElDialog, ElButton, ElInput, ElCheckbox } from 'element-plus'
 import api from '../services/api'
-import type { LoginEvent, RDPEvent, ServiceInfo } from '../types/api'
+import type { LoginEvent, PatchInfo, RDPEvent, ServiceInfo, SystemInfo } from '../types/api'
 
 const router = useRouter()
 const activeTab = ref('login')
@@ -11,6 +118,8 @@ const loading = ref(false)
 const tableData = ref<any[]>([])
 const searchQuery = ref('')
 const debugMode = ref(localStorage.getItem('debugMode') === 'true')
+const dialogVisible = ref(false)
+const selectedPatches = ref<PatchInfo[]>([])
 
 const toggleDebugMode = (val: boolean) => {
   localStorage.setItem('debugMode', val.toString())
@@ -56,7 +165,7 @@ const getColumns = () => {
   const currentTab = tabs.find(tab => tab.name === activeTab.value)
   if (!currentTab) return []
 
-  switch(currentTab.type) {
+  switch (currentTab.type) {
     case 'login':
       return [
         { prop: 'EventID', label: 'Event ID', width: 100 },
@@ -78,28 +187,33 @@ const getColumns = () => {
       ]
     case 'client':
       return [
-        { type: 'expand' },
+        // { type: 'expand' },
         { prop: 'uuid', label: 'UUID', width: 300 },
-        { 
-          prop: 'ip', 
+        {
+          prop: 'ip',
           label: 'IP Addresses',
           formatter: (row: any) => row.ip.join(', ')
         },
-        { 
-          prop: 'SystemInfo.os_name', 
+        {
+          prop: 'SystemInfo.os_name',
           label: 'OS Name',
           width: 200
         },
-        { 
-          prop: 'SystemInfo.os_version', 
+        {
+          prop: 'SystemInfo.os_version',
           label: 'OS Version',
           width: 150
         },
-        { 
-          prop: 'SystemInfo.os_arch', 
+        {
+          prop: 'SystemInfo.os_arch',
           label: 'Architecture',
           width: 120
-        }
+        },
+        // {
+        //   label: 'Patches',
+        //   width: 80,
+        //   scopedSlots: { default: 'patchButton' }
+        // }
       ]
     default:
       return [
@@ -117,101 +231,51 @@ const filters = ref([
   { key: 'eventId', label: 'Event ID', value: '', active: false }
 ])
 
+const formatPatchs = (patchs: PatchInfo[]) => {
+  console.log("patchs: ", patchs)
+  return patchs.map(patch => {
+    return {
+      Description: patch.Description,
+      HotFixID: patch.HotFixID,
+      InstalledBy: patch.InstalledBy,
+      InstalledOn: patch.InstalledOn
+    }
+  })
+}
+
 const applyAdvancedSearch = () => {
   const activeFilters = filters.value
     .filter(f => f.active && f.value)
     .map(f => `${f.key}=${f.value}`)
-  
+
   searchQuery.value = activeFilters.join('&')
   fetchData()
+}
+
+const showPatchDetails = (row: any) => {
+  selectedPatches.value = row.SystemInfo.patchs
+  dialogVisible.value = true
 }
 
 onMounted(fetchData)
 watch(activeTab, fetchData)
 </script>
 
-<template>
-  <div class="dashboard-container">
-    <div class="dashboard-header">
-      <h1>Information Dashboard</h1>
-      <div class="debug-toggle">
-        <el-switch
-          v-model="debugMode"
-          active-text="Debug Mode"
-          inactive-text="Normal Mode"
-          @change="toggleDebugMode"
-        />
-      </div>
-    </div>
-    <el-tabs v-model="activeTab">
-      <el-tab-pane
-        v-for="tab in tabs"
-        :key="tab.name"
-        :label="tab.label"
-        :name="tab.name"
-      >
-        <div class="search-container">
-          <el-input
-            v-model="searchQuery"
-            placeholder="Search (clientId, uuid, ip, etc)..."
-            clearable
-            @change="fetchData"
-          >
-            <template #append>
-              <el-button @click="fetchData">Search</el-button>
-              <el-button @click="showAdvanced = !showAdvanced">
-                {{ showAdvanced ? 'Hide' : 'Advanced' }}
-              </el-button>
-            </template>
-          </el-input>
-          
-          <el-collapse-transition>
-            <div v-if="showAdvanced" class="advanced-search">
-              <div class="filter-grid">
-                <div v-for="filter in filters" :key="filter.key" class="filter-row">
-                  <el-checkbox v-model="filter.active" />
-                  <span class="filter-label">{{ filter.label }}</span>
-                  <el-input 
-                    v-model="filter.value" 
-                    :disabled="!filter.active"
-                    clearable
-                  />
-                </div>
-                <el-button 
-                  type="primary" 
-                  @click="applyAdvancedSearch"
-                  class="apply-btn"
-                >
-                  Apply Filters
-                </el-button>
-              </div>
-            </div>
-          </el-collapse-transition>
-        </div>
-        <el-table
-          v-loading="loading"
-          :data="tableData"
-          style="width: 100%"
-          height="calc(100vh - 250px)"
-        >
-          <el-table-column
-            v-for="column in getColumns()"
-            :key="column.prop"
-            :prop="column.prop"
-            :label="column.label"
-            :width="column.width"
-          />
-        </el-table>
-      </el-tab-pane>
-    </el-tabs>
-  </div>
-</template>
-
 <style scoped>
 .dashboard-container {
   padding: 20px;
 }
+
 .search-container {
   margin: 20px 0;
+}
+
+.patch-details {
+  padding: 10px 20px;
+}
+
+.patch-details h4 {
+  margin: 10px 0;
+  color: var(--el-color-primary);
 }
 </style>
